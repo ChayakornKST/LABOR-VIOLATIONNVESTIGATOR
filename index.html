@@ -1,1 +1,1127 @@
-
+<!doctype html>
+<html lang="th" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Labor Violation Investigator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    * {
+      font-family: 'IBM Plex Sans Thai', 'JetBrains Mono', sans-serif;
+    }
+    
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse-evidence {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+    
+    @keyframes slide-left {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes glow-red {
+      0%, 100% { text-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
+      50% { text-shadow: 0 0 15px rgba(239, 68, 68, 1); }
+    }
+    
+    .animate-fade-in {
+      animation: fade-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .animate-slide-left {
+      animation: slide-left 0.5s ease-out;
+    }
+    
+    .evidence-pulse {
+      animation: pulse-evidence 2s infinite;
+    }
+    
+    .glow-text {
+      animation: glow-red 2s infinite;
+    }
+    
+    .workplace-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    
+    .workplace-area {
+      position: relative;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #334155;
+      border-radius: 8px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .workplace-area:hover {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      transform: translateY(-2px);
+    }
+    
+    .workplace-area.has-evidence {
+      border-color: #ef4444;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+    }
+    
+    .workplace-area.explored {
+      opacity: 0.7;
+    }
+    
+    .evidence-card {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      border: 1px solid #374151;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      animation: fade-in 0.3s ease-out;
+    }
+    
+    .evidence-card:hover {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+      transform: translateX(4px);
+    }
+    
+    .evidence-card.pinned {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, #7f1d1d 0%, #431407 100%);
+    }
+    
+    .violation-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin: 2px;
+    }
+    
+    .violation-unpaid {
+      background: #7c2d12;
+      color: #fed7aa;
+    }
+    
+    .violation-rest {
+      background: #7c3314;
+      color: #fecaca;
+    }
+    
+    .violation-termination {
+      background: #4c1d95;
+      color: #d8b4fe;
+    }
+    
+    .violation-child {
+      background: #7f1d1d;
+      color: #fecaca;
+    }
+    
+    .violation-safety {
+      background: #1f3a8a;
+      color: #93c5fd;
+    }
+    
+    .connection-line {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, #ef4444, transparent);
+      opacity: 0.3;
+    }
+    
+    .board-container {
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    
+    .pin {
+      position: relative;
+      margin: 12px;
+      animation: fade-in 0.3s ease-out;
+    }
+    
+    .pin::before {
+      content: '📌';
+      position: absolute;
+      top: -8px;
+      left: 12px;
+      font-size: 16px;
+    }
+    
+    .modal-overlay {
+      animation: fade-in 0.3s ease-out;
+    }
+    
+    .modal-content {
+      animation: fade-in 0.3s ease-out;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    
+    .evidence-detail {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      border-left: 3px solid #ef4444;
+      padding: 16px;
+      border-radius: 4px;
+      margin: 12px 0;
+    }
+    
+    .action-btn {
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .action-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      transition: left 0.3s ease;
+    }
+    
+    .action-btn:hover::before {
+      left: 100%;
+    }
+    
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .timeline {
+      position: relative;
+      padding: 16px 0;
+    }
+    
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, #ef4444, #374151);
+    }
+    
+    .timeline-item {
+      margin-left: 40px;
+      margin-bottom: 20px;
+      animation: slide-left 0.4s ease-out;
+    }
+    
+    .timeline-dot {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      width: 16px;
+      height: 16px;
+      background: #ef4444;
+      border: 3px solid #1f2937;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background: #1f2937;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ef4444, #f87171);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .noise-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      opacity: 0.02;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 128px 128px;
+    }
+    
+    .red-alert {
+      color: #ef4444;
+      font-weight: 600;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-slate-950 text-gray-100 overflow-hidden">
+  <div class="noise-bg"></div>
+  <div id="app" class="h-full flex flex-col"><!-- Header -->
+   <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-800 px-6 py-4">
+    <div class="max-w-7xl mx-auto">
+     <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+       <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-900 rounded-lg flex items-center justify-center shadow-lg shadow-red-900/50"><span class="text-xl">🔍</span>
+       </div>
+       <div>
+        <h1 class="text-xl font-bold mono text-white">LABOR VIOLATION INVESTIGATOR</h1>
+        <p class="text-xs text-gray-400 mono">เปิดเผยความจริง ปกป้องสิทธิ</p>
+       </div>
+      </div>
+      <div class="flex items-center gap-6">
+       <div class="text-right">
+        <p id="progress-text" class="text-sm mono text-gray-400 mb-1">หลักฐาน: 0/8</p>
+        <div class="w-40 progress-bar">
+         <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+        </div>
+       </div>
+       <div class="text-right">
+        <p class="text-xs text-gray-500 mono mb-1">สถานะการสำรวจ</p>
+        <p id="investigation-status" class="text-sm font-medium text-yellow-500 mono">🔎 กำลังสำรวจ</p>
+       </div>
+      </div>
+     </div>
+    </div>
+   </header><!-- Main Content -->
+   <main class="flex-1 overflow-hidden max-w-7xl mx-auto w-full">
+    <div class="h-full grid grid-cols-3 gap-4 p-4"><!-- Left: Workplace Exploration -->
+     <div class="col-span-1 bg-slate-900/40 border border-slate-800 rounded-lg p-4 overflow-y-auto">
+      <h2 class="text-sm font-bold mono text-gray-400 mb-4 uppercase tracking-wider">สถานที่ทำงาน</h2>
+      <div class="workplace-grid" id="workplace-grid"><!-- Workplace areas rendered here -->
+      </div>
+      <div class="mt-6 pt-4 border-t border-slate-800">
+       <h3 class="text-xs font-bold mono text-gray-500 mb-3 uppercase">เบาะแสที่เก็บรวบรวม</h3>
+       <div id="collected-hints" class="text-xs space-y-2 text-gray-500">
+        <p class="text-gray-600">ยังไม่มีการสำรวจ...</p>
+       </div>
+      </div>
+     </div><!-- Center: Evidence Board -->
+     <div class="col-span-1 bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col">
+      <h2 class="text-sm font-bold mono text-gray-400 mb-4 uppercase tracking-wider">กระดานหลักฐาน</h2>
+      <div id="evidence-board" class="board-container flex-1 overflow-y-auto space-y-2">
+       <p class="text-xs text-gray-600 text-center py-8">🔗 ขั้นแรก เก็บรวบรวมหลักฐานจากสถานที่ทำงาน</p>
+      </div>
+      <div class="mt-4 pt-4 border-t border-slate-800">
+       <p class="text-xs text-gray-500 mono mb-2">จำนวนหลักฐานที่รวบรวม:</p>
+       <div class="flex gap-1">
+        <div id="evidence-indicators" class="flex gap-1 flex-wrap"><!-- Evidence indicators -->
+        </div>
+       </div>
+      </div>
+     </div><!-- Right: Evidence Details & Actions -->
+     <div class="col-span-1 bg-slate-900/40 border border-slate-800 rounded-lg p-4 overflow-y-auto flex flex-col">
+      <h2 class="text-sm font-bold mono text-gray-400 mb-4 uppercase tracking-wider" id="details-header">รายละเอียด</h2>
+      <div id="details-panel" class="flex-1 space-y-4">
+       <div class="text-center py-8">
+        <p class="text-gray-600 text-sm">👈 เลือกหลักฐานจากกระดาน</p>
+       </div>
+      </div>
+      <div class="mt-auto pt-4 border-t border-slate-800"><button id="investigate-btn" disabled class="action-btn w-full py-3 px-4 bg-red-900 hover:bg-red-800 disabled:bg-gray-800 text-white font-bold rounded-lg transition-colors" style="opacity: 0.5; cursor: not-allowed;"> 🔍 เปิดเผยความจริง </button>
+       <p class="text-xs text-gray-600 mt-2 text-center">รวบรวมหลักฐานอย่างน้อย 5 ชิ้นก่อน</p>
+      </div>
+     </div>
+    </div>
+   </main>
+  </div><!-- Workplace Modal -->
+  <div id="explore-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+   <div class="max-w-2xl w-full bg-slate-900 border border-slate-700 rounded-lg modal-content">
+    <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+     <h2 id="modal-title" class="text-lg font-bold mono text-white"></h2><button id="close-explore-modal" class="text-gray-400 hover:text-gray-300 text-2xl">×</button>
+    </div>
+    <div id="explore-content" class="px-6 py-6 space-y-4"><!-- Exploration content -->
+    </div>
+   </div>
+  </div><!-- Evidence Detail Modal -->
+  <div id="evidence-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+   <div class="max-w-2xl w-full bg-slate-900 border border-slate-700 rounded-lg modal-content">
+    <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+     <h2 id="evidence-title" class="text-lg font-bold mono text-white"></h2><button id="close-evidence-modal" class="text-gray-400 hover:text-gray-300 text-2xl">×</button>
+    </div>
+    <div id="evidence-detail-content" class="px-6 py-6 space-y-4"><!-- Evidence detail -->
+    </div>
+    <div class="px-6 py-4 border-t border-slate-800 flex gap-2 justify-end"><button id="evidence-pin-btn" class="action-btn px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded transition-colors"> 📌 เก็บรวบรวม </button> <button id="close-evidence-btn" class="action-btn px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"> ปิด </button>
+    </div>
+   </div>
+  </div><!-- Disclosure Method Modal -->
+  <div id="disclosure-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+   <div class="max-w-3xl w-full bg-slate-900 border border-slate-700 rounded-lg modal-content">
+    <div class="px-6 py-4 border-b border-slate-800">
+     <h2 class="text-lg font-bold mono text-white">🔔 เลือกวิธีการเปิดเผยความจริง</h2>
+     <p class="text-xs text-gray-400 mt-1">การตัดสินใจของคุณจะเปลี่ยนแปลงสิ่งต่าง ๆ</p>
+    </div>
+    <div id="disclosure-methods" class="px-6 py-6 space-y-3 grid grid-cols-1 gap-3"><!-- Disclosure methods -->
+    </div>
+   </div>
+  </div><!-- Outcome Modal -->
+  <div id="outcome-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+   <div class="max-w-2xl w-full bg-slate-900 border border-slate-700 rounded-lg modal-content">
+    <div class="px-6 py-4 border-b border-slate-800">
+     <h2 id="outcome-title" class="text-xl font-bold mono text-white"></h2>
+    </div>
+    <div id="outcome-content" class="px-6 py-6 space-y-4"><!-- Outcome details -->
+    </div>
+    <div class="px-6 py-4 border-t border-slate-800 flex justify-end gap-2"><button id="restart-investigation" class="action-btn px-6 py-2 bg-red-900 hover:bg-red-800 text-white font-medium rounded transition-colors"> 🔄 สำรวจใหม่ </button>
+    </div>
+   </div>
+  </div>
+  <script>
+    // ==================== GAME DATA ====================
+    const workplaceAreas = [
+      {
+        id: 'assembly',
+        name: 'ห้องประกอบ',
+        emoji: '🔧',
+        description: 'พนักงานนั่งงานประกอบส่วนประกอบอุตสาหกรรม',
+        clue: 'มีสัญญาณจ้างแรงงานเด็ก - เด็กสาว 14 ปี นั่งคุกเข่าประกอบเครื่องอิเล็กทรอนิกส์ 6 ชั่วโมงต่อวัน'
+      },
+      {
+        id: 'warehouse',
+        name: 'คลังเก็บสินค้า',
+        emoji: '📦',
+        description: 'พื้นที่บรรจุสินค้า ปล่อยก๊าซมีกลิ่น',
+        clue: 'ไม่มีอุปกรณ์ป้องกัน - คนงานไม่ได้ใส่หน้ากาก แม้จะมีกลิ่นประหลาด'
+      },
+      {
+        id: 'office',
+        name: 'สำนักงาน',
+        emoji: '💼',
+        description: 'จอเสียด้านบนสแครีนเสีย ในการบันทึกข้อมูลเงินเดือน',
+        clue: 'เอกสารหลักฐาน - ระบบบันทึกเงินเดือน ค่า OT คำนวณน้อยกว่าจริง 40%'
+      },
+      {
+        id: 'breakroom',
+        name: 'ห้องพัก',
+        emoji: '☕',
+        description: 'ห้องนั่งพักเล็ก ๆ ไม่มีที่นอน',
+        clue: 'ละเมิดเวลาพัก - คนงาน 50 คน อยู่ห้องเล็ก ๆ 15 นาที/วัน ไม่ได้นอน'
+      },
+      {
+        id: 'floor',
+        name: 'พื้นโรงงาน',
+        emoji: '⚙',
+        description: 'เครื่องจักรวิ่ง ท่อกระบายน้ำเสีย',
+        clue: 'ความปลอดภัย - ไม่มีพนักงานสวมใส่อุปกรณ์ป้องกัน เครื่องจักรขาดการบำรุงรักษา'
+      },
+      {
+        id: 'gate',
+        name: 'ประตูออกเข้า',
+        emoji: '🚪',
+        description: 'ประตูทางออกหลัก ถูกล็อกไว้',
+        clue: 'เลิกจ้างไม่เป็นธรรม - 8 คนถูกจ้างแบบสัญญา 6 เดือน แต่ถูกเลิกกลางคืน'
+      },
+      {
+        id: 'manager-office',
+        name: 'ห้องผู้จัดการ',
+        emoji: '📋',
+        description: 'บนโต๊ะ กระดาษเอกสารเต็มไป บันทึกรายชื่อ',
+        clue: 'ค้างจ่าย - เอกสารบันทึกทำให้เห็นว่าค่าจ้างค้างจ่าย 2 เดือน สำหรับ 40 คน'
+      },
+      {
+        id: 'exit-stairs',
+        name: 'บันไดฉุกเฉิน',
+        emoji: '🚨',
+        description: 'บันไดเต็มไปด้วยเศษวัสดุ',
+        clue: 'ความปลอดภัย - ทางออกฉุกเฉินถูกป้องกัน ไม่สามารถทางออกได้ในกรณีฉุกเฉิน'
+      }
+    ];
+    
+    const evidenceDatabase = {
+      unpaid_wages: [
+        {
+          id: 'salary-sheet',
+          type: 'document',
+          title: 'เอกสารบันทึกค่าจ้าง',
+          location: 'manager-office',
+          description: 'เอกสารจดลายมือที่แสดงว่ากำหนดจ่ายค่าจ้าง 2 เดือนที่ผ่านมายังไม่ได้จ่าย',
+          details: 'พบบันทึก 40 ชื่อ วันที่กำหนดจ่าย: 1 มี.ค., 1 เม.ย. แต่วันที่ปัจจุบัน 15 พ.ค.',
+          violationType: 'unpaid'
+        },
+        {
+          id: 'ot-record',
+          type: 'screenshot',
+          title: 'ระบบค่าจ้างผิดนัด',
+          location: 'office',
+          description: 'ภาพถ่ายจากหน้าจอระบบ OT คำนวณ 40% ต่ำกว่าจริง',
+          details: 'เช่น วันจันทร์ 5 ชั่วโมง OT แต่ระบบคำนวณเพียง 3 ชั่วโมง',
+          violationType: 'unpaid'
+        },
+        {
+          id: 'worker-statement',
+          type: 'chat',
+          title: 'ข้อความจากคนงาน',
+          location: 'breakroom',
+          description: '"ผมทำงาน 6 ปี ยังจ่ายไม่หมด OT 8 เดือน พูดกับนายก็ว่างานค้างหนี้นายก"',
+          details: 'ข้อความจากเฟสบุ๊ก 23:45 น. เมื่อ 14 พ.ค.',
+          violationType: 'unpaid'
+        }
+      ],
+      
+      rest_violation: [
+        {
+          id: 'rest-observation',
+          type: 'observation',
+          title: 'การสังเกตเวลาพัก',
+          location: 'breakroom',
+          description: 'ห้องพักเล็ก 3x3 เมตร 50 คนอยู่ 15 นาทีต่อวัน ไม่มีที่นอน',
+          details: 'วันที่สังเกต 14-15 พ.ค. ทุกวัน เวลาพักน้อยกว่า 8 ชั่วโมงต่อ 24 ชั่วโมง',
+          violationType: 'rest'
+        },
+        {
+          id: 'schedule-evidence',
+          type: 'document',
+          title: 'ตารางการทำงาน',
+          location: 'manager-office',
+          description: 'ตารางการทำงาน 14 ชั่วโมง/วัน วันละ 6 วัน ต่อเนื่อง',
+          details: 'ไม่มีการระบุเวลาพัก ไม่มีวันหยุดประจำ',
+          violationType: 'rest'
+        },
+        {
+          id: 'tired-workers',
+          type: 'photo',
+          title: 'รูปภาพคนงานล้า',
+          location: 'assembly',
+          description: 'รูปถ่ายคนงานนั่งหลับตาขณะทำงาน ดวงตาบวมแดง',
+          details: 'ถ่ายวันที่ 14 พ.ค. เวลา 15:30 น. คนที่ 3 จากขวาก็หลับตา',
+          violationType: 'rest'
+        }
+      ],
+      
+      child_labor: [
+        {
+          id: 'child-worker',
+          type: 'photo',
+          title: 'ภาพเด็กสาวทำงาน',
+          location: 'assembly',
+          description: 'เด็กสาวอายุประมาณ 14-15 ปี นั่งประกอบเครื่องอิเล็กทรอนิกส์',
+          details: 'ถ่ายวันที่ 14 พ.ค. เด็กสาวสวมเสื้อสีชมพู ประกอบเพลทอิเล็กทรอนิกส์',
+          violationType: 'child'
+        },
+        {
+          id: 'parent-statement',
+          type: 'chat',
+          title: 'ข้อมูลจากผู้ปกครอง',
+          location: 'gate',
+          description: 'พ่อของเด็ก: "บอกว่าลูกฉันมาช่วยงานวันหยุด แต่เดี๋ยวนี้มาทุกวัน"',
+          details: 'ข้อความ LINE 13 พ.ค. 22:15 น.',
+          violationType: 'child'
+        },
+        {
+          id: 'payroll-child',
+          type: 'document',
+          title: 'บันทึกจ่ายเงินเด็ก',
+          location: 'office',
+          description: 'บันทึกชื่อ "นางสาวนิ..." อายุ 14, เงินเดือน 4,000 บาท/เดือน',
+          details: 'บันทึกค่าจ้าง 100 บาท/วัน × 40 วัน',
+          violationType: 'child'
+        }
+      ],
+      
+      unfair_termination: [
+        {
+          id: 'termination-letter',
+          type: 'document',
+          title: 'จดหมายเลิกจ้าง',
+          location: 'manager-office',
+          description: '8 คนลงนามบันทึกเลิกจ้าง วันที่ 15 พ.ค. โดยไม่มีเหตุผล',
+          details: 'บันทึก: "ลิกจ้างแบบทันที ไม่มีเงินชดเชย"',
+          violationType: 'termination'
+        },
+        {
+          id: 'worker-cry',
+          type: 'video',
+          title: 'วิดีโอคนงานร้องไห้',
+          location: 'gate',
+          description: 'วิดีโอนาย ส. ร้องไห้ที่ประตูโรงงาน "ทำงาน 8 ปี โดนเลิก 1 วันมิดไนท์"',
+          details: 'วิดีโอ 47 วินาที ที่ถ่ายเมื่อ 16 พ.ค. 05:30 น.',
+          violationType: 'termination'
+        },
+        {
+          id: 'contract-found',
+          type: 'document',
+          title: 'สัญญาจ้างชั่วคราว',
+          location: 'office',
+          description: 'สัญญา 6 เดือน แต่ลิกเพียง 3 เดือน ไม่มีเงินชดเชย',
+          details: 'สัญญา ส.ค. 2567 ถึง ก.พ. 2568 แต่เลิก ต.ค. 2567',
+          violationType: 'termination'
+        }
+      ],
+      
+      safety: [
+        {
+          id: 'no-ppe',
+          type: 'photo',
+          title: 'ไม่มีอุปกรณ์ป้องกัน',
+          location: 'warehouse',
+          description: 'คนงาน 15 คน ทำงานข้างเครื่องจักรหลังที่แสดง "มีกลิ่นประหลาด" โดยไม่สวมใส่หน้ากากอนามัย',
+          details: 'ถ่ายวันที่ 14 พ.ค. ท่อกระบายน้ำเสีย รั่ว มีกลิ่นแก๊ส',
+          violationType: 'safety'
+        },
+        {
+          id: 'emergency-exit-blocked',
+          type: 'photo',
+          title: 'ทางออกฉุกเฉินปิดกั้น',
+          location: 'exit-stairs',
+          description: 'บันไดหนีไฟถูกวางเศษวัสดุ ก่องกระดาษ ท่อเหล็ก ปิดกั้น 80%',
+          details: 'ถ่ายวันที่ 15 พ.ค. บันไดสามารถบรรจุ 50 คน แต่กั้นเหลือ 10 คน',
+          violationType: 'safety'
+        },
+        {
+          id: 'safety-report',
+          type: 'document',
+          title: 'รายงานสุขภาพคนงาน',
+          location: 'office',
+          description: 'บันทึก 6 คนป่วยเรื่อง "หายใจไม่ออก ปอดเจ็บ" ใน 2 สัปดาห์ที่ผ่านมา',
+          details: 'บันทึก 8-15 พ.ค. อาการเหมือนกัน แต่ว่างไม่ได้รับการปฐานบาท',
+          violationType: 'safety'
+        }
+      ]
+    };
+    
+    const disclosureMethods = [
+      {
+        id: 'labor-dept',
+        title: '📞 แจ้งกระทรวงแรงงาน',
+        description: 'ติดต่อกับ สำนัก/โรงแรม สิทธิแรงงานอย่างเป็นทางการ',
+        consequences: {
+          workers: 'ต้องรอผลการตรวจสอบ 2-4 สัปดาห์ อาจมีการแก้ไข',
+          employer: 'โรงงานอาจปรับปรุง แต่หากมีการปิดบัง อาจถูกปรับสูงสุด 1 ล้านบาท',
+          investigation: 'อย่างเป็นทางการ ยาก ปลอดภัย',
+          playerRisk: 'ต่ำ'
+        },
+        icon: '✅'
+      },
+      {
+        id: 'media',
+        title: '📺 ลอบให้สื่อมวลชน',
+        description: 'ส่งหลักฐานให้สถานีโทรทัศน์หรือสื่อออนไลน์',
+        consequences: {
+          workers: 'เรื่องเผยแพร่มากมาย การตอบโต้อาจรุนแรง',
+          employer: 'สูญเสียชื่อเสียงโรงแรม อาจต้องปิดตัว',
+          investigation: 'รวดเร็ว ส่งผลอย่างมาก ความเสี่ยงสูง',
+          playerRisk: 'สูง'
+        },
+        icon: '⚡'
+      },
+      {
+        id: 'ngo',
+        title: '🤝 ติดต่อ NGO แรงงาน',
+        description: 'ทำงานกับองค์กรสิทธิแรงงาน',
+        consequences: {
+          workers: 'ได้รับการสนับสนุนทางกฎหมายและการเรียนรู้สิทธิ์',
+          employer: 'ถูกเฝ้าดู ลดโอกาสการกระทำที่ผิดกฎหมาย',
+          investigation: 'อย่างเป็นทางการและยั่งยืน',
+          playerRisk: 'ปานกลาง'
+        },
+        icon: '🛡️'
+      },
+      {
+        id: 'social-media',
+        title: '📱 โพสต์ออนไลน์',
+        description: 'แพร่ผ่านโซเชียลมิเดีย Facebook, TikTok, Twitter',
+        consequences: {
+          workers: 'เป็นที่รู้จักของประชาชน แต่ความจริงอาจบิดเบือน',
+          employer: 'ตกใจ อาจเลิกอาชีพ',
+          investigation: 'เร็ว แต่เสี่ยงข้อมูลผิด',
+          playerRisk: 'สูงมาก'
+        },
+        icon: '🔥'
+      },
+      {
+        id: 'lawsuit',
+        title: '⚖️ ฟ้องร้องผ่านทนายความ',
+        description: 'ยื่นฟ้องร้องต่อศาลแพ่ง',
+        consequences: {
+          workers: 'ได้รับค่าเสียหาย แต่ใช้เวลานาน (1-2 ปี)',
+          employer: 'ต้องจ่ายเงินชดเชยและค่าปรึกษาหารือ',
+          investigation: 'ช้า ต้องหารือมาตรฐาน แต่ถูกต้องตามกฎหมาย',
+          playerRisk: 'ปานกลาง'
+        },
+        icon: '⚔️'
+      }
+    ];
+    
+    // ==================== GAME STATE ====================
+    let gameState = {
+      collectedEvidence: [],
+      exploredAreas: [],
+      selectedEvidence: null,
+      gameOver: false,
+      disclosureMethod: null
+    };
+    
+    // ==================== INITIALIZATION ====================
+    function initGame() {
+      renderWorkplaceAreas();
+      renderAdvisorInfo();
+      setupEventListeners();
+    }
+    
+    function renderWorkplaceAreas() {
+      const grid = document.getElementById('workplace-grid');
+      grid.innerHTML = workplaceAreas.map(area => `
+        <button class="workplace-area animate-fade-in group" data-area="${area.id}" title="${area.name}">
+          <div class="flex flex-col items-center justify-center h-full space-y-2">
+            <span class="text-3xl group-hover:scale-110 transition-transform">${area.emoji}</span>
+            <span class="text-xs font-medium text-gray-400 text-center px-2">${area.name}</span>
+          </div>
+        </button>
+      `).join('');
+      
+      grid.querySelectorAll('.workplace-area').forEach(btn => {
+        btn.addEventListener('click', () => exploreArea(btn.dataset.area));
+      });
+    }
+    
+    function renderAdvisorInfo() {
+      // Show initial hints in the collected hints section
+      const hintsContainer = document.getElementById('collected-hints');
+      hintsContainer.innerHTML = '<p class="text-xs text-gray-600">คลิกเลือกสถานที่เพื่อสำรวจหลักฐาน...</p>';
+    }
+    
+    function setupEventListeners() {
+      document.getElementById('close-explore-modal').addEventListener('click', closeExploreModal);
+      document.getElementById('close-evidence-modal').addEventListener('click', closeEvidenceModal);
+      document.getElementById('close-evidence-btn').addEventListener('click', closeEvidenceModal);
+      document.getElementById('evidence-pin-btn').addEventListener('click', pinEvidence);
+      document.getElementById('investigate-btn').addEventListener('click', startDisclosure);
+    }
+    
+    // ==================== EXPLORATION ====================
+    function exploreArea(areaId) {
+      const area = workplaceAreas.find(a => a.id === areaId);
+      if (!area) return;
+      
+      // Mark as explored
+      if (!gameState.exploredAreas.includes(areaId)) {
+        gameState.exploredAreas.push(areaId);
+        document.querySelector(`[data-area="${areaId}"]`).classList.add('explored');
+      }
+      
+      // Find evidence in this area
+      const areaEvidence = Object.values(evidenceDatabase).flat().filter(e => e.location === areaId);
+      
+      // Show modal with findings
+      const modal = document.getElementById('explore-modal');
+      const title = document.getElementById('modal-title');
+      const content = document.getElementById('explore-content');
+      
+      title.textContent = `${area.emoji} ${area.name}`;
+      
+      content.innerHTML = `
+        <p class="text-sm text-gray-400 mb-4">${area.description}</p>
+        
+        <div class="bg-slate-800/50 border border-slate-700 rounded p-4 mb-4">
+          <p class="text-xs font-bold text-red-400 mono mb-2">💡 เบาะแส</p>
+          <p class="text-sm text-gray-300">${area.clue}</p>
+        </div>
+        
+        ${areaEvidence.length > 0 ? `
+          <h3 class="text-sm font-bold text-gray-400 mb-3">📌 หลักฐานที่พบในสถานที่นี้</h3>
+          <div class="space-y-2">
+            ${areaEvidence.map(evidence => `
+              <button class="evidence-card w-full p-3 text-left evidence-btn" data-evidence="${evidence.id}">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <p class="font-medium text-white text-sm">${evidence.title}</p>
+                    <p class="text-xs text-gray-500 mt-1">${evidence.description}</p>
+                    <div class="mt-2">
+                      <span class="violation-tag violation-${evidence.violationType}">${getViolationLabel(evidence.violationType)}</span>
+                    </div>
+                  </div>
+                  <span class="text-lg ml-2">${getEvidenceIcon(evidence.type)}</span>
+                </div>
+              </button>
+            `).join('')}
+          </div>
+        ` : '<p class="text-sm text-gray-600 text-center py-4">ไม่พบหลักฐานใหญ่ในสถานที่นี้</p>'}
+      `;
+      
+      // Add event listeners to evidence buttons
+      content.querySelectorAll('.evidence-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const evidenceId = btn.dataset.evidence;
+          showEvidenceDetail(evidenceId);
+          closeExploreModal();
+        });
+      });
+      
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    
+    function closeExploreModal() {
+      document.getElementById('explore-modal').classList.add('hidden');
+      document.getElementById('explore-modal').classList.remove('flex');
+    }
+    
+    // ==================== EVIDENCE MANAGEMENT ====================
+    function showEvidenceDetail(evidenceId) {
+      // Find evidence
+      const evidence = Object.values(evidenceDatabase).flat().find(e => e.id === evidenceId);
+      if (!evidence) return;
+      
+      const modal = document.getElementById('evidence-modal');
+      const title = document.getElementById('evidence-title');
+      const content = document.getElementById('evidence-detail-content');
+      const pinBtn = document.getElementById('evidence-pin-btn');
+      
+      const isCollected = gameState.collectedEvidence.find(e => e.id === evidenceId);
+      
+      title.textContent = `${getEvidenceIcon(evidence.type)} ${evidence.title}`;
+      
+      content.innerHTML = `
+        <div class="evidence-detail">
+          <p class="text-sm text-gray-300 mb-3">${evidence.description}</p>
+          <p class="text-xs text-gray-500 mono">
+            📍 สถานที่: ${workplaceAreas.find(a => a.id === evidence.location)?.name}
+          </p>
+        </div>
+        
+        <div class="bg-slate-800/50 border border-slate-700 rounded p-4">
+          <p class="text-xs font-bold text-white mb-2">รายละเอียดเพิ่มเติม</p>
+          <p class="text-sm text-gray-400">${evidence.details}</p>
+        </div>
+        
+        <div class="flex gap-2 items-center">
+          <span class="inline-block violation-tag violation-${evidence.violationType}">
+            ${getViolationLabel(evidence.violationType)}
+          </span>
+          <span class="text-xs text-gray-500">ประเภท: ${getEvidenceTypeName(evidence.type)}</span>
+        </div>
+      `;
+      
+      if (isCollected) {
+        pinBtn.textContent = '✓ เก็บรวบรวมแล้ว';
+        pinBtn.disabled = true;
+        pinBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        pinBtn.textContent = '📌 เก็บรวบรวม';
+        pinBtn.disabled = false;
+        pinBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        pinBtn.onclick = () => pinEvidence(evidenceId);
+      }
+      
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    
+    function pinEvidence(evidenceId) {
+      // Find evidence
+      const evidence = Object.values(evidenceDatabase).flat().find(e => e.id === evidenceId);
+      if (!evidence) return;
+      
+      // Check if already collected
+      if (gameState.collectedEvidence.find(e => e.id === evidenceId)) return;
+      
+      // Add to collected
+      gameState.collectedEvidence.push(evidence);
+      
+      // Update UI
+      updateEvidenceBoard();
+      updateProgress();
+      
+      // Disable button
+      document.getElementById('evidence-pin-btn').textContent = '✓ เก็บรวบรวมแล้ว';
+      document.getElementById('evidence-pin-btn').disabled = true;
+    }
+    
+    function updateEvidenceBoard() {
+      const board = document.getElementById('evidence-board');
+      const indicators = document.getElementById('evidence-indicators');
+      
+      board.innerHTML = gameState.collectedEvidence.map((evidence, idx) => `
+        <button class="evidence-card p-3 evidence-board-item" data-evidence="${evidence.id}">
+          <div class="flex items-start gap-2">
+            <span class="text-lg flex-shrink-0">${getEvidenceIcon(evidence.type)}</span>
+            <div class="flex-1">
+              <p class="font-medium text-white text-sm">${evidence.title}</p>
+              <p class="text-xs text-gray-500 mt-1 line-clamp-2">${evidence.description}</p>
+              <div class="mt-2">
+                <span class="inline-block violation-tag violation-${evidence.violationType}">
+                  ${getViolationLabel(evidence.violationType)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </button>
+      `).join('');
+      
+      // Add click handlers
+      board.querySelectorAll('.evidence-board-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          showEvidenceDetail(btn.dataset.evidence);
+        });
+      });
+      
+      // Update indicators
+      indicators.innerHTML = gameState.collectedEvidence.map((_, idx) => `
+        <div class="w-3 h-3 rounded-full bg-red-600 shadow-lg shadow-red-600/50"></div>
+      `).join('');
+    }
+    
+    function updateProgress() {
+      const count = gameState.collectedEvidence.length;
+      const total = 8;
+      const percent = (count / total) * 100;
+      
+      document.getElementById('progress-text').textContent = `หลักฐาน: ${count}/${total}`;
+      document.getElementById('progress-fill').style.width = `${percent}%`;
+      
+      // Update investigation status
+      const statusEl = document.getElementById('investigation-status');
+      if (count >= 5) {
+        statusEl.textContent = '✅ พร้อมเปิดเผย';
+        statusEl.className = 'text-sm font-medium text-green-500 mono';
+        document.getElementById('investigate-btn').disabled = false;
+        document.getElementById('investigate-btn').style.opacity = '1';
+        document.getElementById('investigate-btn').style.cursor = 'pointer';
+      } else {
+        statusEl.textContent = `🔎 ขาด ${5 - count} หลักฐาน`;
+        statusEl.className = 'text-sm font-medium text-yellow-500 mono';
+        document.getElementById('investigate-btn').disabled = true;
+        document.getElementById('investigate-btn').style.opacity = '0.5';
+        document.getElementById('investigate-btn').style.cursor = 'not-allowed';
+      }
+    }
+    
+    function closeEvidenceModal() {
+      document.getElementById('evidence-modal').classList.add('hidden');
+      document.getElementById('evidence-modal').classList.remove('flex');
+    }
+    
+    // ==================== DISCLOSURE ====================
+    function startDisclosure() {
+      const modal = document.getElementById('disclosure-modal');
+      const methodsContainer = document.getElementById('disclosure-methods');
+      
+      methodsContainer.innerHTML = disclosureMethods.map(method => `
+        <button class="disclosure-method w-full p-4 bg-slate-800/50 border border-slate-700 rounded-lg hover:border-red-600 hover:bg-slate-800 transition-all text-left group" data-method="${method.id}">
+          <div class="flex items-start gap-3">
+            <span class="text-2xl">${method.icon}</span>
+            <div class="flex-1">
+              <p class="font-bold text-white">${method.title}</p>
+              <p class="text-xs text-gray-500 mt-1">${method.description}</p>
+              <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-slate-900/50 p-2 rounded">
+                  <p class="text-gray-600">ความเสี่ยง</p>
+                  <p class="text-red-400">${method.consequences.playerRisk}</p>
+                </div>
+                <div class="bg-slate-900/50 p-2 rounded">
+                  <p class="text-gray-600">ผล</p>
+                  <p class="text-blue-400">${method.consequences.investigation}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
+      `).join('');
+      
+      methodsContainer.querySelectorAll('.disclosure-method').forEach(btn => {
+        btn.addEventListener('click', () => {
+          makeDisclosure(btn.dataset.method);
+        });
+      });
+      
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    
+    function makeDisclosure(methodId) {
+      gameState.disclosureMethod = methodId;
+      const method = disclosureMethods.find(m => m.id === methodId);
+      
+      // Close method selection modal
+      document.getElementById('disclosure-modal').classList.add('hidden');
+      document.getElementById('disclosure-modal').classList.remove('flex');
+      
+      // Show outcome after delay
+      setTimeout(() => showOutcome(method), 500);
+    }
+    
+    function showOutcome(method) {
+      gameState.gameOver = true;
+      
+      const modal = document.getElementById('outcome-modal');
+      const title = document.getElementById('outcome-title');
+      const content = document.getElementById('outcome-content');
+      
+      const violationCount = {
+        unpaid: gameState.collectedEvidence.filter(e => e.violationType === 'unpaid').length,
+        rest: gameState.collectedEvidence.filter(e => e.violationType === 'rest').length,
+        child: gameState.collectedEvidence.filter(e => e.violationType === 'child').length,
+        termination: gameState.collectedEvidence.filter(e => e.violationType === 'termination').length,
+        safety: gameState.collectedEvidence.filter(e => e.violationType === 'safety').length
+      };
+      
+      const evidenceCount = gameState.collectedEvidence.length;
+      
+      title.textContent = `${method.icon} ${method.title}`;
+      
+      content.innerHTML = `
+        <div class="space-y-4">
+          <div class="evidence-detail">
+            <p class="font-bold text-white mb-2">📊 สรุปหลักฐานที่เก็บรวบรวม</p>
+            <div class="grid grid-cols-2 gap-3">
+              ${Object.entries(violationCount).map(([type, count]) => `
+                <div class="bg-slate-800/50 p-2 rounded">
+                  <p class="text-xs text-gray-500">${getViolationLabel(type)}</p>
+                  <p class="text-lg font-bold text-red-400">${count}</p>
+                </div>
+              `).join('')}
+            </div>
+            <p class="text-sm text-gray-400 mt-3">รวมทั้งสิ้น <span class="font-bold text-white">${evidenceCount} หลักฐาน</span></p>
+          </div>
+          
+          <div class="bg-slate-800/50 border border-slate-700 rounded p-4">
+            <p class="font-bold text-white mb-3">📋 ผลการเปิดเผย</p>
+            <div class="space-y-3 text-sm">
+              <div>
+                <p class="text-gray-400 mb-1">👥 ผลต่อคนงาน:</p>
+                <p class="text-gray-300">${method.consequences.workers}</p>
+              </div>
+              <div>
+                <p class="text-gray-400 mb-1">🏭 ผลต่อนายจ้าง:</p>
+                <p class="text-gray-300">${method.consequences.employer}</p>
+              </div>
+              <div>
+                <p class="text-gray-400 mb-1">🔍 ผลต่อการสำรวจ:</p>
+                <p class="text-gray-300">${method.consequences.investigation}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="timeline">
+            ${gameState.collectedEvidence.map((evidence, idx) => `
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div>
+                  <p class="font-medium text-white text-sm">${evidence.title}</p>
+                  <p class="text-xs text-gray-500 mt-1">${evidence.description}</p>
+                  <span class="inline-block violation-tag violation-${evidence.violationType} mt-2">
+                    ${getViolationLabel(evidence.violationType)}
+                  </span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          
+          <div class="bg-slate-800/50 border border-slate-700 rounded p-4 mt-4">
+            <p class="text-sm text-gray-300 italic">
+              "${method.description}" จะส่งผลให้เกิดการเปลี่ยนแปลงที่อาจไม่คาดคิด 
+              การตัดสินใจของคุณในฐานะผู้เปิดเผยความจริง ถูกแล่นปั้นในทุกอื่น...
+            </p>
+          </div>
+        </div>
+      `;
+      
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    
+    function restartInvestigation() {
+      gameState = {
+        collectedEvidence: [],
+        exploredAreas: [],
+        selectedEvidence: null,
+        gameOver: false,
+        disclosureMethod: null
+      };
+      
+      document.getElementById('outcome-modal').classList.add('hidden');
+      document.getElementById('outcome-modal').classList.remove('flex');
+      
+      document.getElementById('evidence-board').innerHTML = '<p class="text-xs text-gray-600 text-center py-8">🔗 ขั้นแรก เก็บรวบรวมหลักฐานจากสถานที่ทำงาน</p>';
+      document.getElementById('progress-text').textContent = 'หลักฐาน: 0/8';
+      document.getElementById('progress-fill').style.width = '0%';
+      document.getElementById('investigation-status').textContent = '🔎 กำลังสำรวจ';
+      document.getElementById('investigation-status').className = 'text-sm font-medium text-yellow-500 mono';
+      document.getElementById('evidence-indicators').innerHTML = '';
+      
+      renderWorkplaceAreas();
+    }
+    
+    // ==================== UTILITY FUNCTIONS ====================
+    function getEvidenceIcon(type) {
+      const icons = {
+        document: '📄',
+        photo: '📸',
+        video: '🎥',
+        screenshot: '📹',
+        chat: '💬',
+        observation: '👁️'
+      };
+      return icons[type] || '📌';
+    }
+    
+    function getEvidenceTypeName(type) {
+      const names = {
+        document: 'เอกสาร',
+        photo: 'รูปภาพ',
+        video: 'วิดีโอ',
+        screenshot: 'ภาพหน้าจอ',
+        chat: 'ข้อความ',
+        observation: 'การสังเกต'
+      };
+      return names[type] || 'ไม่ทราบ';
+    }
+    
+    function getViolationLabel(type) {
+      const labels = {
+        unpaid: 'ค้างจ่าย',
+        rest: 'เวลาพัก',
+        child: 'เด็ก',
+        termination: 'เลิกจ้าง',
+        safety: 'ความปลอดภัย'
+      };
+      return labels[type] || 'ไม่ทราบ';
+    }
+    
+    // ==================== SETUP ====================
+    document.getElementById('restart-investigation').addEventListener('click', restartInvestigation);
+    
+    // Initialize SDK if available
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig: {},
+        onConfigChange: async () => {},
+        mapToCapabilities: () => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: () => new Map()
+      });
+    }
+    
+    // Start game
+    initGame();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c5b0ef5919545be',t:'MTc2OTcxNDEyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
